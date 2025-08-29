@@ -27,10 +27,12 @@ jobs:
           fi
           git clone https://x-access-token:${{ secrets.TARGET_REPO_TOKEN }}@$REPO_URL target-repo
 
-      - name: Copy docs to target repo
+      - name: Set REPO_NAME
         run: |
           echo "REPO_NAME=$(basename -s .git $(git config --get remote.origin.url))" >> $GITHUB_ENV
-          source $GITHUB_ENV
+          
+      - name: Copy docs to target repo
+        run: |
           echo COPY to --> $REPO_NAME <--
           TARGET_PATH="target-repo/docs/externalContent/$REPO_NAME/docs"
           rm -rf "$TARGET_PATH"
