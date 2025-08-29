@@ -1,0 +1,48 @@
+name: Sync docs to kyma main repo
+
+on:
+  push:
+    paths:
+      - 'docs/**'
+
+jobs:
+  sync-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@v4
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Clone target repo
+        run: |
+          REPO_URL=${{ vars.TARGET_REPO }}
+          if [ -z "$REPO_URL" ]; then
+            REPO_URL="github.com/kyma-project/kyma.git"
+          fi
+          git clone https://x-access-token:${{ secrets.TARGET_REPO_TOKEN }}@$REPO_URL target-repo
+
+      - name: Copy docs to target repo
+        run: |
+          echo "REPO_NAME=$(basename -s .git $(git config --get remote.origin.url))" >> $GITHUB_ENV
+          echo "REPO_NAME=value" >> $GITHUB_ENV
+          TARGET_PATH="target-repo/docs/externalContent/$REPO_NAME/docs"
+          rm -rf "$TARGET_PATH"
+          mkdir -p "$TARGET_PATH"
+          cp -r docs/* "$TARGET_PATH/"
+
+
+      - name: Commit and push changes
+        run: |
+          cd target-repo
+          git add docs
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Sync docs from $REPO_NAME repo"
+            git push
+          fi
